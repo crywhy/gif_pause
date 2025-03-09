@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Document</title>
+	<script src="./libgif.js"></script>
+	<link rel="stylesheet" href="./gifcss.css">
+</head>
+
+<style>
+	.group {
+		display: inline-block;
+	}
+
+	.key_group {
+		width: 100%;
+		/* display: inline-block; */
+	}
+
+	.img_group {
+		position: relative;
+	}
+
+	.img_group:hover .play[class~="dis_none"]+.pause {
+		display: block;
+	}
+
+	.dis_none {
+		display: none;
+	}
+
+	#range {
+		width: 100%;
+	}
+
+	.loading {
+		display: none;
+		position: absolute;
+		top: calc(50% - 32px);
+		left: calc(50% - 32px);
+		z-index: 1;
+		animation: runaround 4s linear infinite;
+	}
+
+	.load.img_group::after {
+		content: '';
+		display: block;
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		background-color: rgba(223, 223, 223, 0.4);
+	}
+
+	.gif_canvas {
+		width: 780px;
+		height: 440px;
+		background-color: #666;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		margin-top: 10px;
+	}
+
+	.jsgif,
+	.jsgif canvas {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+
+	.height_100 {
+		height: 100%;
+	}
+
+	.width_100 {
+		width: 100%;
+	}
+
+	.img_min .jsgif,
+	.img_min .jsgif canvas {
+		height: 80%;
+	}
+
+	.drag_box {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		width: 50%;
+		height: 70%;
+		border: 2px dashed #bcceff;
+		border-radius: 10px;
+		font-size: 16px;
+		align-content: center;
+		text-align: center;
+		color: rgb(95, 99, 104);
+		background: rgb(255 255 255);
+		transform: translate(-50%, -50%);
+	}
+
+	.drag_bgc {
+		background-color: #dce6ff;
+	}
+
+	@keyframes runaround {
+		0% {
+			transform: rotate(0deg);
+		}
+
+		100% {
+			transform: rotate(360deg);
+		}
+	}
+</style>
+
+<body>
+	<div style="display: flex;justify-content: center;">
+
+		<div class="group">
+			<div class="key_group">
+				<input id="range" type="range" disabled min="0"></input>
+
+				<input type="file" name="" accept="image/gif" id="upload">
+				<input type="text" id="input_link">
+
+
+				<button id="img_link">图片外链</button>
+				<button id="reset" disabled>重置</button>
+				<button id="download" disabled>下载该帧</button>
+				<button id="prevFrame" disabled>上一帧</button>
+				<button id="nextFrame" disabled>下一帧</button>
+			</div>
+			<div class="img_group">
+				<div class="loading">
+					<svg class="icon" width="64px" height="64.00px" viewBox="0 0 1024 1024" version="1.1"
+						xmlns="http://www.w3.org/2000/svg">
+						<path fill="#fff"
+							d="M475.428571 97.52381h73.142858v219.428571h-73.142858z m0 609.523809h73.142858v219.428571h-73.142858zM926.47619 475.428571v73.142858h-219.428571v-73.142858z m-609.523809 0v73.142858H97.52381v-73.142858zM779.215238 193.072762l51.712 51.687619-155.136 155.184762-51.736381-51.736381zM348.208762 624.054857l51.736381 51.736381-155.160381 155.136-51.712-51.687619zM193.097143 244.784762l51.687619-51.712 155.184762 155.136-51.736381 51.736381z m430.982095 431.006476l51.736381-51.736381 155.136 155.160381-51.687619 51.712z" />
+					</svg>
+				</div>
+				<div class="play dis_none">
+					<div class="icon_top elm"></div>
+					<div class="icon_bottom elm"></div>
+					<div class="icon_left elm"></div>
+					<div class="icon_right elm"></div>
+				</div>
+				<div class="pause">
+					<div class="icon_bottom elm"></div>
+					<div class="icon_left elm"></div>
+					<div class="icon_right elm"></div>
+				</div>
+				<div class="gif_canvas"></div>
+				<div class="drag_box" style="display: none;">
+					将图片放到此处或上传文件
+				</div>
+				<!-- <img id="gif" src="111.gif" /> -->
+				<!-- <img id="gif" src="./out4.gif" /> -->
+			</div>
+		</div>
+	</div>
+	<script>
+		// const gif = document.getElementById("gif");
+		const range = document.getElementById("range");
+		const upload = document.getElementById("upload");
+		const img_group = document.querySelector(".img_group");
+		const loading = document.querySelector(".loading");
+		const gif_canvas = document.querySelector(".gif_canvas");
+
+		let sup1
+
+		upload.onchange = () => {
+			if (!upload.files.length) return
+
+			initGif(upload.files[0])
+		}
+
+		function initGif(file) {
+			const jsGif = document.querySelector('.jsgif')
+			if (jsGif) {
+				jsGif.parentNode.removeChild(jsGif)
+			}
+
+			if (img_group.classList.value?.includes('img_min')) {
+				img_group.classList.remove('img_min')
+			}
+
+			if (pause.classList.value?.includes('dis_none')) {
+				pause.classList.remove('dis_none')
+				play.classList.add('dis_none')
+			}
+			img_group.classList.remove('img_min')
+			img_group.classList.add('load')
+			loading.style.display = 'block'
+			upload.disabled = true
+			disabledButton(true)
+
+			const gifElement = document.createElement('img')
+			if (typeof file === "string") {
+				gifElement.src = file
+			} else {
+				gifElement.src = URL.createObjectURL(file)
+			}
+
+			gifElement.onload = () => {
+				if (gifElement.width < 100 || gifElement.height < 100) {
+					img_group.classList.add('img_min')
+					return
+				}
+				const jsgif = document.querySelector('.jsgif')
+
+				// if (gifElement.width > gifElement.height) {
+				// 	if ( gif_canvas.scrollWidth / gif_canvas.scrollHeight> gifElement.width / gifElement.height) {
+				// 		jsgif.classList.add('height_100')
+				// 		jsgif.childNodes[0].classList.add('height_100')
+				// 	} else {
+				// 		jsgif.classList.add('width_100')
+				// 		jsgif.childNodes[0].classList.add('width_100')
+				// 	}
+				// } else {
+				// 	jsgif.classList.add('height_100')
+				// 	jsgif.childNodes[0].classList.add('height_100')
+				// }
+
+				if (gifElement.width > gifElement.height) {
+					if (gif_canvas.scrollWidth / gif_canvas.scrollHeight < gifElement.width / gifElement.height) {
+						jsgif.classList.add('width_100')
+						jsgif.childNodes[0].classList.add('width_100')
+						return
+					}
+				}
+				jsgif.classList.add('height_100')
+				jsgif.childNodes[0].classList.add('height_100')
+			}
+
+			gif_canvas.appendChild(gifElement)
+
+			sup1 = new SuperGif({
+				gif: gifElement,
+				progressbar_foreground_color: "#9254de",
+				progressbar_background_color: "#ebeef5",
+				progressbar_height: 5,
+			});
+
+			img_group.style.display = 'inline-block'
+			sup1.load(() => {
+				img_group.classList.remove('load')
+				loading.style.display = 'none'
+				upload.disabled = false
+				range.disabled = false
+				disabledButton(false);
+				get_current_frame()
+				range.max = sup1.get_length() - 1
+				console.log(range.max);
+			});
+			return gifElement
+		}
+
+		const pause = document.querySelector(".pause")
+		const play = document.querySelector(".play")
+
+		function gifPlay(){
+			sup1.play();
+			pause.classList.remove('dis_none')
+			play.classList.add('dis_none')
+		}
+		function gifPause(){
+			sup1.pause();
+			pause.classList.add('dis_none')
+			play.classList.remove('dis_none')
+		}
+		pause.addEventListener("click", gifPause);
+		play.addEventListener("click", gifPlay);
+		
+		document.addEventListener('keydown', function(e){
+			
+			if (e.keyCode == 32) {
+				if (sup1.get_playing()) {
+					gifPause()
+				} else {
+					gifPlay()
+				}
+			}
+			
+		})
+
+		document.getElementById('img_link').addEventListener("click", function () {
+			const input_link = document.getElementById('input_link')
+			if (input_link.value == '') return
+			initGif(input_link.value)
+		});
+		// 按钮绑定
+		document.getElementById("reset").addEventListener("click", function () {
+			sup1.move_to(0);
+		});
+		document.getElementById("download").addEventListener("click", function () {
+			const canvas = document.querySelector('.img_group canvas')
+			const imgData = canvas.toDataURL()
+			const a = document.createElement('a')
+			// 对象URL的字符串表示形式将足够小，以解决浏览器的限制  
+			a.href = imgData
+			// download 设备点击该链接是下载，下载的名字就是该字符串
+			a.download = new Date().getTime()
+			a.click()
+			window.URL.revokeObjectURL(imgData);
+		});
+		document.getElementById("prevFrame").addEventListener("click", function () {
+			sup1.move_relative(-1);
+		});
+		document.getElementById("nextFrame").addEventListener("click", function () {
+			sup1.move_relative(1);
+		});
+
+
+		let playing = false
+		range.onmousedown = () => {
+			synchronous_frame = false
+			playing = sup1.get_playing()
+
+			sup1.pause()
+		}
+
+		range.onmouseup = () => {
+			synchronous_frame = true
+
+			if (playing) {
+				sup1.play()
+			}
+			get_current_frame()
+		}
+		range.oninput = () => {
+			if (!sup1) return
+			sup1.move_to(range.value);
+		}
+
+		// 开启或者禁止按钮
+		function disabledButton(isOpen) {
+			document.querySelectorAll("button").forEach((item) => {
+				item.disabled = isOpen;
+			});
+		}
+
+		// 轮询赋值进度条
+		let synchronous_frame = true
+		function get_current_frame() {
+			range.value = sup1.get_current_frame()
+
+			if (synchronous_frame) {
+				requestIdleCallback(get_current_frame)
+			}
+		}
+
+
+		const drag_box = document.querySelector('.drag_box')
+		let timer = null
+		document.ondragover = function () {
+			clearTimeout(timer);
+			timer = setTimeout(function () {
+				drag_box.style.display = 'none';
+			}, 200);
+			drag_box.style.display = 'block';
+		};
+
+		drag_box.ondragenter = function () {
+			drag_box.classList.add('drag_bgc')
+			drag_box.innerHTML = '将图片放到此处';
+		};
+		drag_box.ondragover = function () {
+			return false;
+		};
+		drag_box.ondragleave = function () {
+			drag_box.classList.remove('drag_bgc')
+			drag_box.innerHTML = '将图片放到此处或上传文件';
+		};
+		drag_box.ondrop = function (ev) {
+			const oFile = ev.dataTransfer.files[0];
+			initGif(oFile)
+			return false
+		}
+
+	</script>
+</body>
+
+</html>
